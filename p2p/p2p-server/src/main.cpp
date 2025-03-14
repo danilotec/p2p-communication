@@ -102,7 +102,12 @@ void receiveData() {
 
         if (msg.length() > 0) {
           Serial.println("Mensagem recebida de outro ESP: " + msg);
-          
+          if (msg == "on") {
+            digitalWrite(LED_PIN, LOW);
+          }
+          else {
+            digitalWrite(LED_PIN, HIGH);
+          }
           // Aqui você pode processar a mensagem ou enviá-la para a API
           sendData(msg.toInt()); // Se for um valor numérico, enviamos para a API
         }
@@ -124,7 +129,7 @@ void setup() {
   Serial.begin(115200);
   
   pinMode(ANALOG_PIN, INPUT);
-
+  pinMode(LED_PIN, OUTPUT);
   setupWiFi();
   server.begin();
 }

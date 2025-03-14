@@ -8,5 +8,5 @@
 #define SERVER_PORT 1234              // Porta do servidor
 #define ANALOG_PIN A0                 // Pino do sensor
 #define SEND_INTERVAL 5000            // Intervalo entre envios (ms)
-
+#define SWITCH_PIN 2
 #endif
