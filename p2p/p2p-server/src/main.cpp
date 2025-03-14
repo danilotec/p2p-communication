@@ -64,6 +64,7 @@ void sendData(int analogValue) {
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<200> jsonDoc;
+    jsonDoc["device"] = "esp-server";
     jsonDoc["sensor"] = analogValue;
     jsonDoc["timestamp"] = millis();
 
@@ -88,6 +89,32 @@ void sendData(int analogValue) {
   }
 }
 
+void sendJson(String dataJson) {
+  reconnectWiFi();  // Apenas reconecta sem mudar o modo WiFi
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(client, API_URL);
+    http.addHeader("Content-Type", "application/json");
+
+    int responseCode = http.POST(dataJson);
+    
+    Serial.print("Código de Resposta: ");
+    Serial.println(responseCode);
+
+    if (responseCode == 200) {
+      Serial.println("Dados enviados com sucesso!");
+    } else {
+      Serial.print("Erro ao enviar: ");
+      Serial.println(http.errorToString(responseCode).c_str());
+    }
+
+    http.end();
+  } else {
+    Serial.println("WiFi desconectado! Dados não enviados.");
+  }
+}
+
 void receiveData() {
   WiFiClient client = server.available();
   if (client) {
@@ -98,7 +125,7 @@ void receiveData() {
     while (client.connected()) {
       if (client.available()) {
         String msg = client.readStringUntil('\n');
-        msg.trim(); // Remove espaços em branco e quebras de linha extras
+        msg.trim();
 
         if (msg.length() > 0) {
           Serial.println("Mensagem recebida de outro ESP: " + msg);
@@ -108,8 +135,19 @@ void receiveData() {
           else {
             digitalWrite(LED_PIN, HIGH);
           }
-          // Aqui você pode processar a mensagem ou enviá-la para a API
-          sendData(msg.toInt()); // Se for um valor numérico, enviamos para a API
+
+          if (msg == "on" || msg == "off") {
+            StaticJsonDocument<200> jsonDoc;
+            jsonDoc["device"] = "esp-client";
+            jsonDoc["command"] = msg;
+            jsonDoc["timestamp"] = millis();
+        
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+            sendJson(jsonString); 
+          } else {
+              sendJson(msg);
+            }
         }
       }
 
